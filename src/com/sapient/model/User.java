@@ -4,6 +4,16 @@
 package com.sapient.model;
 
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
 
 /**
  * @author jxu1
@@ -27,10 +37,60 @@ public class User implements Serializable {
 	}
 	
 	public boolean validateLogin(String username, String password) {
-		if (username.equals("jiajuxu") && password.equals("hunter2")) {
-			fname = "Jiaju";
-			lname = "Xu";
-			return true;
+		Context ctx = null;
+		Connection con = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+				
+		try {
+			//Lookup for DataSource
+			ctx = new InitialContext();
+			DataSource ds = (DataSource)ctx.lookup("java:comp/env/jdbc/bankDB");
+			
+			//Obtain a connection
+			con = ds.getConnection();
+			
+			//Query the database
+			ps = con.prepareStatement("SELECT FIRSTNAME, LASTNAME FROM USERS WHERE USERID=? AND PASSWD=?");
+			ps.setString(1, username);
+			ps.setString(2, password);
+			
+			rs =ps.executeQuery();
+					
+			if (rs.next()) {
+				fname = rs.getString(1);
+				lname = rs.getString(2);
+				return true;
+			}
+			return false;
+		} catch (NamingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if(ctx!= null) {
+					ctx.close();
+				}
+				if(con!= null) {
+					con.close();
+				}
+				if(ps!= null) {
+					ps.close();
+				}
+				if(rs!= null) {
+					rs.close();
+				}
+			} catch (NamingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return false;
 	}
